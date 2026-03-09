@@ -20,73 +20,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Convert wiki links and add front matter
+      - name: Add front matter to markdown files
         run: |
           python3 << 'SCRIPT'
-          import os, re, glob, urllib.parse
+          import os, re, pathlib
 
-          # Build page map: display name -> path relative to root (without .md)
-          page_map = {}
-          for md in glob.glob('**/*.md', recursive=True):
-              # Skip hidden dirs, Jekyll dirs, and Home.md (index.md is the home page)
-              if md.startswith(('.', '_')) or md == 'Home.md':
+          for md in pathlib.Path('.').rglob('*.md'):
+              md = str(md)
+              # Skip hidden dirs, Jekyll dirs, Home.md
+              if any(part.startswith(('.', '_')) for part in md.split(os.sep)):
                   continue
-              name = os.path.splitext(os.path.basename(md))[0]
-              rel_path = os.path.splitext(md)[0]
-              page_map[name] = rel_path
-
-          print(f"Page map: {page_map}")
-
-          for md in glob.glob('**/*.md', recursive=True):
-              if md.startswith(('.', '_')) or md == 'Home.md':
+              if md == 'Home.md':
                   continue
 
               with open(md, 'r') as f:
                   content = f.read()
 
-              # Extract title from first H1 if present
-              title_match = re.match(r'^#\s+(.+)$', content.lstrip('-\n '), re.MULTILINE)
-              if not title_match:
-                  title_match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
+              # Skip if front matter already exists
+              if content.startswith('---'):
+                  print(f"Skipped (has front matter): {md}")
+                  continue
+
+              # Extract title from first H1
+              title_match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
               title = title_match.group(1) if title_match else os.path.splitext(os.path.basename(md))[0]
 
-              # Strip existing front matter if present, we'll re-add it
-              if content.startswith('---'):
-                  end = content.find('---', 3)
-                  if end != -1:
-                      content = content[end+3:].lstrip('\n')
-
-              # Convert [[wiki links]] to markdown links
-              def replace_wiki_link(match):
-                  link_text = match.group(1)
-                  if '|' in link_text:
-                      target, display = link_text.split('|', 1)
-                  else:
-                      target = link_text
-                      display = link_text
-
-                  target = target.strip()
-                  display = display.strip()
-
-                  if target in page_map:
-                      url_path = urllib.parse.quote(page_map[target])
-                      return f'[{display}](/{url_path})'
-                  else:
-                      # Page doesn't exist yet — render as plain italic
-                      return f'*{display}*'
-
-              content = re.sub(r'\[\[([^\]]+)\]\]', replace_wiki_link, content)
-
               # Add front matter
-              front_matter = f'---\nlayout: default\ntitle: "{title}"\npermalink: /{urllib.parse.quote(os.path.splitext(md)[0])}\n---\n\n'
+              front_matter = f'---\nlayout: default\ntitle: "{title}"\n---\n\n'
               content = front_matter + content
 
               with open(md, 'w') as f:
                   f.write(content)
 
-              print(f"Processed: {md} -> {title}")
-
-          print(f"\nTotal pages: {len(page_map)}")
+              print(f"Added front matter: {md} -> {title}")
           SCRIPT
 
       - name: Setup Ruby

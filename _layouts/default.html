@@ -36,6 +36,68 @@
     </article>
   </main>
 
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const contentDiv = document.querySelector('.page-content');
+    if (!contentDiv) return;
+
+    const pages = [
+      {%- for p in site.pages -%}
+        {%- if p.title and p.url contains '.html' or p.name contains '.md' -%}
+          { title: {{ p.title | jsonify }}, url: "{{ site.baseurl }}{{ p.url | replace: '.html', '' }}" },
+        {%- endif -%}
+      {%- endfor -%}
+    ];
+
+    function findPage(title) {
+      return pages.find(p => p.title.toLowerCase() === title.toLowerCase())
+          || pages.find(p => p.url.toLowerCase().endsWith('/' + title.toLowerCase().replace(/ /g, '%20')));
+    }
+
+    function processNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        let el = node.parentElement;
+        while (el) {
+          if (el.tagName === 'CODE' || el.tagName === 'PRE') return;
+          el = el.parentElement;
+        }
+        const text = node.textContent;
+        const re = /\[\[([^\]]+)\]\]/g;
+        let match, last = 0, frags = [];
+        while ((match = re.exec(text)) !== null) {
+          if (match.index > last)
+            frags.push(document.createTextNode(text.slice(last, match.index)));
+          const linkText = match[1].includes('|') ? match[1].split('|')[1] : match[1];
+          const target = match[1].includes('|') ? match[1].split('|')[0] : match[1];
+          const found = findPage(target);
+          const a = document.createElement('a');
+          a.textContent = linkText;
+          if (found) {
+            a.href = found.url;
+            a.className = 'wiki-link';
+          } else {
+            a.href = 'javascript:void(0)';
+            a.className = 'stale-link';
+            a.title = 'Page not yet written: ' + target;
+          }
+          frags.push(a);
+          last = match.index + match[0].length;
+        }
+        if (frags.length > 0) {
+          if (last < text.length)
+            frags.push(document.createTextNode(text.slice(last)));
+          frags.forEach(f => node.parentNode.insertBefore(f, node));
+          node.parentNode.removeChild(node);
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        Array.from(node.childNodes).forEach(c => processNode(c));
+      }
+    }
+
+    processNode(contentDiv);
+  });
+  </script>
+
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="templar-cross">&#10013;</div>

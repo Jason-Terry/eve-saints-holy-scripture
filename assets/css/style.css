@@ -209,6 +209,12 @@ em {
   border-bottom-color: var(--templar-red);
 }
 
+.page-content a.stale-link {
+  color: var(--text-muted);
+  border-bottom: 1px dashed var(--parchment-shadow);
+  cursor: default;
+}
+
 /* Lists */
 ul, ol {
   margin-bottom: 1rem;
