@@ -9,6 +9,7 @@ kramdown:
 
 exclude:
   - .obsidian
+  - Home.md
   - publish.sh
   - Gemfile
   - Gemfile.lock

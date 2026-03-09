@@ -23,37 +23,42 @@ jobs:
       - name: Convert wiki links and add front matter
         run: |
           python3 << 'SCRIPT'
-          import os, re, glob
+          import os, re, glob, urllib.parse
 
-          # Map of known pages: display name -> relative path (without .md)
+          # Build page map: display name -> path relative to root (without .md)
           page_map = {}
           for md in glob.glob('**/*.md', recursive=True):
-              if md.startswith(('.', '_')):
+              # Skip hidden dirs, Jekyll dirs, and Home.md (index.md is the home page)
+              if md.startswith(('.', '_')) or md == 'Home.md':
                   continue
               name = os.path.splitext(os.path.basename(md))[0]
-              path = '/' + os.path.splitext(md)[0]
-              page_map[name] = path
+              rel_path = os.path.splitext(md)[0]
+              page_map[name] = rel_path
+
+          print(f"Page map: {page_map}")
 
           for md in glob.glob('**/*.md', recursive=True):
-              if md.startswith(('.', '_')):
+              if md.startswith(('.', '_')) or md == 'Home.md':
                   continue
 
               with open(md, 'r') as f:
                   content = f.read()
 
               # Extract title from first H1 if present
-              title_match = re.match(r'^#\s+(.+)$', content, re.MULTILINE)
+              title_match = re.match(r'^#\s+(.+)$', content.lstrip('-\n '), re.MULTILINE)
+              if not title_match:
+                  title_match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
               title = title_match.group(1) if title_match else os.path.splitext(os.path.basename(md))[0]
 
-              # Add front matter if missing
-              if not content.startswith('---'):
-                  front_matter = f'---\nlayout: default\ntitle: "{title}"\n---\n\n'
-                  content = front_matter + content
+              # Strip existing front matter if present, we'll re-add it
+              if content.startswith('---'):
+                  end = content.find('---', 3)
+                  if end != -1:
+                      content = content[end+3:].lstrip('\n')
 
               # Convert [[wiki links]] to markdown links
               def replace_wiki_link(match):
                   link_text = match.group(1)
-                  # Handle [[Page|Display Text]] format
                   if '|' in link_text:
                       target, display = link_text.split('|', 1)
                   else:
@@ -64,17 +69,24 @@ jobs:
                   display = display.strip()
 
                   if target in page_map:
-                      return f'[{display}]({{% link {page_map[target][1:]}.md %}})'
+                      url_path = urllib.parse.quote(page_map[target])
+                      return f'[{display}](/{url_path})'
                   else:
+                      # Page doesn't exist yet — render as plain italic
                       return f'*{display}*'
 
               content = re.sub(r'\[\[([^\]]+)\]\]', replace_wiki_link, content)
 
+              # Add front matter
+              front_matter = f'---\nlayout: default\ntitle: "{title}"\npermalink: /{urllib.parse.quote(os.path.splitext(md)[0])}\n---\n\n'
+              content = front_matter + content
+
               with open(md, 'w') as f:
                   f.write(content)
 
-          print(f"Processed {len(page_map)} pages")
-          print(f"Page map: {page_map}")
+              print(f"Processed: {md} -> {title}")
+
+          print(f"\nTotal pages: {len(page_map)}")
           SCRIPT
 
       - name: Setup Ruby
