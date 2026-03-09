@@ -1,0 +1,15 @@
+title: The Holy Scripture
+description: Doctrine & SOP for The-Saints [SAYNT]
+baseurl: "/eve-saints-holy-scripture"
+url: "https://jason-terry.github.io"
+
+markdown: kramdown
+kramdown:
+  input: GFM
+
+exclude:
+  - .obsidian
+  - publish.sh
+  - Gemfile
+  - Gemfile.lock
+  - "*.sh"

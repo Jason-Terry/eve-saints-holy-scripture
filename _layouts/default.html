@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if page.title %}{{ page.title }} — {% endif %}{{ site.title }}</title>
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="templar-cross">&#10013;</div>
+      <a href="{{ '/' | relative_url }}" class="site-title">{{ site.title }}</a>
+      <p class="site-subtitle">{{ site.description }}</p>
+    </div>
+  </header>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="{{ '/' | relative_url }}">Home</a>
+      <span class="nav-divider">&#10013;</span>
+      <a href="{{ '/Doctrine/01 - PvE Doctrine' | relative_url }}">PvE</a>
+      <a href="{{ '/Doctrine/02 - PvP Home Defense' | relative_url }}">Home Defense</a>
+      <a href="{{ '/Doctrine/PvP Hunting' | relative_url }}">Hunting</a>
+      <span class="nav-divider">&#10013;</span>
+      <a href="{{ '/Corp Info/About' | relative_url }}">About</a>
+      <a href="{{ '/Corp Info/Allies' | relative_url }}">Allies</a>
+    </div>
+  </nav>
+
+  <main class="content">
+    <article class="page-content">
+      {{ content }}
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="templar-cross">&#10013;</div>
+      <p>The-Saints [SAYNT] &mdash; C3 Wormhole</p>
+      <p class="footer-motto">Repent and believe in the gospel.</p>
+    </div>
+  </footer>
+</body>
+</html>
